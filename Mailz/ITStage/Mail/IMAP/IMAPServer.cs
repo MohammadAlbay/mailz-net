@@ -12,10 +12,10 @@ namespace ITStage.Mail.IMAP
         public int Port { get; set; }
         public bool UseSSL { get; set; }
         private Channel<TcpClient> ConnectionQueue { get; set; }
-        private IMAPServerConfig Config { get; set; }
+        private UnifiedMailServerConfig Config { get; set; }
         private TcpListener? listener;
 
-        public IMAPServer(IMAPServerConfig config)
+        public IMAPServer(UnifiedMailServerConfig config)
         {
             Config = config;
             ConnectionQueue = Channel.CreateBounded<TcpClient>(MAX_CAPACITY);

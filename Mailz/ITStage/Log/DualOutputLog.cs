@@ -12,6 +12,7 @@ public class DualOutputLog
     // Implementation of DualOutputLog
     public DualOutputLog(string prefix = "", string logFilePath = "log.txt", System.IO.TextWriter? consoleOutput = null)
     {
+        this.prefix = prefix;
         // Initialize logging to file and console
         this.logFilePath = logFilePath;
         this.consoleOutput = consoleOutput ?? Console.Out;
