@@ -24,13 +24,15 @@ jobs:
                         # 2.5. Fetch the latest code
                         git pull origin main
 
-                        # 3.0. Clean the project
+            
+                        # 3.0. Build the project (clean, nuget cache clear, restore, and build)
                         cd Mailz
                         dotnet clean
-                        cd ..
+                        dotnet nuget locals all --clear
+                        dotnet restore --force
+                        # dotnet build -c Debug -r linux-x64 --self-contained false
+                        dotnet build -c Debug
                         
-                        # 3.5. Build the project
-                        dotnet build
 
                         # 4 Restart the service
                         # ./opt/mailz-net/Mailz/bin/Debug/net10.0/linux-x64/Mailz
