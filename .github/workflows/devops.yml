@@ -18,14 +18,18 @@ jobs:
                         # 1 Move to the app dir
                         cd /opt/mailz-net/
 
-                        # 2 Fetch the latest code
+                        # 2. Disacrd any local changes
+                        git reset --hard
+                        
+                        # 2.5. Fetch the latest code
                         git pull origin main
 
-                        # 3 Clean the project
+                        # 3.0. Clean the project
                         cd Mailz
                         dotnet clean
                         cd ..
-                        # 3 Build the project
+                        
+                        # 3.5. Build the project
                         dotnet build
 
                         # 4 Restart the service
