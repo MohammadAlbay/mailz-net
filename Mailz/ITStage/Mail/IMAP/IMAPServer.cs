@@ -77,7 +77,7 @@ namespace ITStage.Mail.IMAP
 
         public async Task ParseCommands(string command, TcpClient? client)
         {
-            await Logger.LogAsync($"Parsing command: {command}");
+            await Logger.LogAsync($"{client.Client.RemoteEndPoint}: Parsing command: {command}");
         }
 
         public async Task Connect()
