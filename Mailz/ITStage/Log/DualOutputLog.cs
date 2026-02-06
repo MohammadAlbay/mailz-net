@@ -28,7 +28,7 @@ public class DualOutputLog
         await consoleOutput.WriteLineAsync(timestampedMessage);
 
         // Log to file
-        await fileWriter.WriteLineAsync(timestampedMessage);
+        try { await fileWriter.WriteLineAsync(timestampedMessage); } catch { }
         // await fileWriter.FlushAsync();
     }
 
@@ -40,7 +40,7 @@ public class DualOutputLog
         consoleOutput.WriteLine(timestampedMessage);
 
         // Log to file
-        fileWriter.WriteLine(timestampedMessage);
+        try { fileWriter.WriteLine(timestampedMessage); } catch { }
         // fileWriter.FlushAsync();
     }
 
