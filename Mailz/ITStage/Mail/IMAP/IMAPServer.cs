@@ -61,7 +61,7 @@ namespace ITStage.Mail.IMAP
                             break;
                         }
 
-                        await ParseCommands(command, client, reader);
+                        await ParseCommands(command, client, writer);
                     }
 
                 }
