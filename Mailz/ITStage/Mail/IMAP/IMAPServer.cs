@@ -49,7 +49,7 @@ namespace ITStage.Mail.IMAP
                 try
                 {
                     using StreamReader reader = new(stream);
-
+                    using StreamWriter writer = new(stream) { AutoFlush = true };
                     for (; ; )
                     {
                         if (!stream.CanRead) break;
@@ -61,7 +61,7 @@ namespace ITStage.Mail.IMAP
                             break;
                         }
 
-                        await ParseCommands(command, client);
+                        await ParseCommands(command, client, reader);
                     }
 
                 }
@@ -75,9 +75,36 @@ namespace ITStage.Mail.IMAP
             }
         }
 
-        public async Task ParseCommands(string command, TcpClient? client)
+        public Task RespondToClient(TcpClient client, Stream stream, string response)
+        {
+            return Task.Run(async () =>
+            {
+                try
+                {
+
+                    await stream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(response + "\r\n"));
+                    await Logger.LogAsync($"Sent response to {client.Client.RemoteEndPoint}: {response}");
+                }
+                catch (Exception ex)
+                {
+                    await Logger.LogAsync($"Error responding to client {client.Client.RemoteEndPoint}: {ex.Message}");
+                }
+            });
+        }
+
+        public async Task ParseCommands(string command, TcpClient? client, StreamWriter? writer = null)
         {
             await Logger.LogAsync($"{client.Client.RemoteEndPoint}: Parsing command: {command}");
+            switch (command.ToUpper())
+            {
+                case "CAPABILITY":
+                    await RespondToClient(client, writer.BaseStream, "IMAP4rev1 STARTTLS LOGINDISABLED");
+                    break;
+                case "Hello":
+                case "OLHA":
+                    await RespondToClient(client, writer.BaseStream, "Hello! Welcome to the IMAP server.");
+                    break;
+            }
         }
 
         public async Task Connect()
