@@ -106,9 +106,11 @@ namespace ITStage.Mail.IMAP
                     // READ user & pass as base64 encoded string
                     string authData = await ReadLineAsync(reader);
                     Logger.Log($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
-                    var decodedAuth = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(authData.Trim()));
+                    byte[] binaryAuth = Convert.FromBase64String(authData.Trim());
+                    string decodedAuth = System.Text.Encoding.UTF8.GetString(binaryAuth);
+                    string[] authParts = decodedAuth.Split('\0');
                     Logger.Log($"Decoded AUTH data from {client.Client.RemoteEndPoint}: {decodedAuth}");
-                    var authParts = decodedAuth.Split('\0');
+
                     if (authParts.Length == 3)
                     {
                         string authType = authParts[0];
