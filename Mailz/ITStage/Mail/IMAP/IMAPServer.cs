@@ -50,11 +50,14 @@ namespace ITStage.Mail.IMAP
                 {
                     using StreamReader reader = new(stream);
                     using StreamWriter writer = new(stream) { AutoFlush = true };
+                    /*only once*/
+                    await RespondToClient(client, stream, "* OK IMAP4rev1 Service Ready");
+
                     for (; ; )
                     {
                         if (!stream.CanRead || !stream.CanWrite) break;
 
-                        await RespondToClient(client, stream, "* OK IMAP4rev1 Service Ready");
+
 
                         string command = await reader.ReadLineAsync() ?? "";
                         if (string.IsNullOrWhiteSpace(command))
@@ -63,7 +66,7 @@ namespace ITStage.Mail.IMAP
                             break;
                         }
 
-                        await ParseCommands(command, client, writer);
+                        await ParseCommands(command, client, writer, reader);
                     }
 
                 }
@@ -76,12 +79,12 @@ namespace ITStage.Mail.IMAP
 
 
 
-        public async Task ParseCommands(string command, TcpClient? client, StreamWriter writer = null)
+        public async Task ParseCommands(string command, TcpClient? client, StreamWriter writer, StreamReader reader)
         {
             await Logger.LogAsync($"{client.Client.RemoteEndPoint}: Parsing command: {command}");
 
-            // Extract Tag, Command, and Arguments, And Might need to handle user & password for login command
-            var parts = command.Trim().Split(' ', 4, StringSplitOptions.RemoveEmptyEntries);
+            // Extract Tag, Command, and Arguments
+            var parts = command.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 2) return;
 
             var tag = parts[0];
@@ -95,6 +98,22 @@ namespace ITStage.Mail.IMAP
                     await RespondToClient(client, writer.BaseStream, $"{tag} OK CAPABILITY completed");
                     break;
                 case "AUTHENTICATE":
+                    await RespondToClient(client, writer.BaseStream, "+ ");
+                    // READ user & pass as base64 encoded string
+                    string authData = await reader.ReadLineAsync() ?? "";
+                    var decodedAuth = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(authData.Trim()));
+                    var authParts = decodedAuth.Split('\0');
+                    if (authParts.Length == 3)
+                    {
+                        string authType = authParts[0];
+                        string username = authParts[1];
+                        string password = authParts[2];
+                        await Authenticate(authType, username, password, client, writer);
+                    }
+                    else
+                    {
+                        await RespondToClient(client, writer.BaseStream, $"{tag} NO Invalid authentication data");
+                    }
                     await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
                     await RespondToClient(client, writer.BaseStream, $"{tag} OK LOGIN completed");
                     break;
@@ -120,6 +139,12 @@ namespace ITStage.Mail.IMAP
                     await Logger.LogAsync($"Error responding to client {client.Client.RemoteEndPoint}: {ex.Message}");
                 }
             });
+        }
+
+        public async Task<string> ReadLineAsync(StreamReader reader)
+        {
+            string? line = await reader.ReadLineAsync();
+            return line ?? string.Empty;
         }
 
         public async Task Connect()
