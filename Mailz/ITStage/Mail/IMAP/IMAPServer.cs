@@ -113,7 +113,17 @@ namespace ITStage.Mail.IMAP
                         string authType = authParts[0];
                         string username = authParts[1];
                         string password = authParts[2];
-                        await Authenticate(authType, username, password, client, writer);
+                        var result = await Authenticate(authType, username, password, client, writer);
+                        if (!result)
+                        {
+                            await RespondToClient(client, writer.BaseStream, $"{tag} NO Authentication failed");
+                            return;
+                        }
+                        else
+                        {
+                            await RespondToClient(client, writer.BaseStream, $"{tag} OK Authentication successful");
+
+                        }
                     }
                     else
                     {

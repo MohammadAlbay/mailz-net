@@ -36,7 +36,8 @@ jobs:
                         dotnet restore --force
                         # dotnet build -c Debug -r linux-x64 --self-contained false
                         # dotnet build -c Debug
-                        dotnet publish -c Debug -o /opt/mailz-net/publish-current
+                        # dotnet publish -c Debug -o /opt/mailz-net/publish-current
+                        dotnet build -c Debug -o /opt/mailz-net/publish-current
 
 
                         # 4 Restart the service

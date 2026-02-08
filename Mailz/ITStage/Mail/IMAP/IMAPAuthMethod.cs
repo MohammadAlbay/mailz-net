@@ -9,11 +9,12 @@ namespace ITStage.Mail.IMAP
 {
     public partial class IMAPServer
     {
-        public Task Authenticate(string mechanism, string user, string password, TcpClient client, StreamWriter writer)
+        public async Task<bool> Authenticate(string mechanism, string user, string password, TcpClient client, StreamWriter writer)
         {
             // For simplicity, we will just accept any credentials for now
             // In a real implementation, you would validate the credentials against your user database
-            return RespondToClient(client, writer.BaseStream, $"{mechanism} authentication successful");
+            await RespondToClient(client, writer.BaseStream, $"{mechanism} authentication successful");
+            return true;
         }
     }
 }
