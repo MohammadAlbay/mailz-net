@@ -39,7 +39,7 @@ namespace ITStage.Mail.IMAP
                 {
                     // Load the certificate and key
 
-
+                    Logger.Log($"Loading SSL/TLS certificate from {Config.SSLCertificatePath}");
                     sslCertificate = X509CertificateLoader.LoadCertificateFromFile(Config.SSLCertificatePath);
                     // Store the certificate for later use in SSL/TLS connections
                     // For example, you could assign it to a property or use it in your connection handling logic
@@ -89,9 +89,9 @@ namespace ITStage.Mail.IMAP
                     using StreamReader reader = new(sslStream);
                     using StreamWriter writer = new(sslStream) { AutoFlush = true };
                     /*only once*/
-                    await RespondToClient(client, sslStream, "* OK IMAP4rev1 Service Ready");
+                    await RespondToClient(client, sslStream, "* OK IMAP4rev1 Service Ready\r\n");
 
-                    for (; ; )
+                    while (client.Connected)
                     {
                         if (!sslStream.CanRead || !sslStream.CanWrite) break;
 
@@ -103,7 +103,7 @@ namespace ITStage.Mail.IMAP
                             break;
                         }
 
-                        await ParseCommands(command, client, writer, reader);
+                        await ParseCommands(command, client, writer, reader, sslStream);
                     }
 
                 }
@@ -116,7 +116,7 @@ namespace ITStage.Mail.IMAP
 
 
 
-        public async Task ParseCommands(string command, TcpClient? client, StreamWriter writer, StreamReader reader)
+        public async Task ParseCommands(string command, TcpClient? client, StreamWriter writer, StreamReader reader, SslStream sslStream)
         {
             await Logger.LogAsync($"{client.Client.RemoteEndPoint}: Parsing command: {command}");
 
@@ -124,7 +124,7 @@ namespace ITStage.Mail.IMAP
             var parts = command.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
             if (parts.Length < 2)
             {
-                await RespondToClient(client, writer.BaseStream, "* BAD Invalid command format");
+                await RespondToClient(client, sslStream, "* BAD Invalid command format");
                 return;
             }
 
@@ -135,11 +135,11 @@ namespace ITStage.Mail.IMAP
             switch (cmd)
             {
                 case "CAPABILITY":
-                    await RespondToClient(client, writer.BaseStream, "* CAPABILITY IMAP4rev1 AUTH=PLAIN LOGIN");
-                    await RespondToClient(client, writer.BaseStream, $"{tag} OK CAPABILITY completed");
+                    await RespondToClient(client, sslStream, "* CAPABILITY IMAP4rev1 AUTH=PLAIN LOGIN");
+                    await RespondToClient(client, sslStream, $"{tag} OK CAPABILITY completed");
                     break;
                 case "AUTHENTICATE":
-                    await RespondToClient(client, writer.BaseStream, "+ ");
+                    await RespondToClient(client, sslStream, "+ ");
                     // READ user & pass as base64 encoded string
                     string authData = await ReadLineAsync(reader);
                     Logger.Log($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
@@ -156,24 +156,24 @@ namespace ITStage.Mail.IMAP
                         var result = await Authenticate(authType, username, password, client, writer);
                         if (!result)
                         {
-                            await RespondToClient(client, writer.BaseStream, $"{tag} NO Authentication failed");
+                            await RespondToClient(client, sslStream, $"{tag} NO Authentication failed");
                             return;
                         }
                         else
                         {
-                            await RespondToClient(client, writer.BaseStream, $"{tag} OK Authentication successful");
+                            await RespondToClient(client, sslStream, $"{tag} OK Authentication successful");
                         }
                     }
                     else
                     {
-                        await RespondToClient(client, writer.BaseStream, $"{tag} NO Invalid authentication data");
+                        await RespondToClient(client, sslStream, $"{tag} NO Invalid authentication data");
                     }
                     // await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
-                    await RespondToClient(client, writer.BaseStream, $"{tag} OK LOGIN completed");
+                    await RespondToClient(client, sslStream, $"{tag} OK LOGIN completed");
                     break;
                 case "HELLO":
                 case "OLHA":
-                    await RespondToClient(client, writer.BaseStream, "Hello! Welcome to the IMAP server.");
+                    await RespondToClient(client, sslStream, "Hello! Welcome to the IMAP server.");
                     break;
             }
         }
