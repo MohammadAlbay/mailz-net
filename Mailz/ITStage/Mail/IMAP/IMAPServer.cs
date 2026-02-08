@@ -85,7 +85,11 @@ namespace ITStage.Mail.IMAP
 
             // Extract Tag, Command, and Arguments
             var parts = command.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
-            if (parts.Length < 2) return;
+            if (parts.Length < 2)
+            {
+                await RespondToClient(client, writer.BaseStream, "* BAD Invalid command format");
+                return;
+            }
 
             var tag = parts[0];
             var cmd = parts[1].ToUpper();
@@ -100,7 +104,8 @@ namespace ITStage.Mail.IMAP
                 case "AUTHENTICATE":
                     await RespondToClient(client, writer.BaseStream, "+ ");
                     // READ user & pass as base64 encoded string
-                    string authData = await reader.ReadLineAsync() ?? "";
+                    string authData = await ReadLineAsync(reader);
+                    Logger.Log($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
                     var decodedAuth = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(authData.Trim()));
                     var authParts = decodedAuth.Split('\0');
                     if (authParts.Length == 3)
