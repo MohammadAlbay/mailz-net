@@ -40,8 +40,11 @@ namespace ITStage.Mail.IMAP
                 {
                     // Load the certificate and key
 
-                    Logger.Log($"Loading SSL/TLS certificate from {Config.SSLCertificatePath}");
-                    sslCertificate = X509CertificateLoader.LoadCertificateFromFile(Config.SSLCertificatePath);
+                    Logger.Log($"Loading SSL/TLS certificate from {Config.SSLCertificatePath}\nand key from {Config.SSLCertificateKey}");
+                    var certBuffer = File.ReadAllText(Config.SSLCertificatePath);
+                    var keyBuffer = File.ReadAllText(Config.SSLCertificateKey);
+
+                    sslCertificate = X509Certificate2.CreateFromPem(certBuffer, keyBuffer);
                     // Store the certificate for later use in SSL/TLS connections
                     // For example, you could assign it to a property or use it in your connection handling logic
                     await Logger.LogAsync("SSL/TLS certificate loaded successfully.");
