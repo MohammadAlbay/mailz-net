@@ -1,6 +1,8 @@
 using System.Net.Sockets;
 using System.Threading.Channels;
 using ITStage.Log;
+using System.Security.Cryptography.X509Certificates;
+using System.Net.Security;
 
 namespace ITStage.Mail.IMAP
 {
@@ -14,6 +16,7 @@ namespace ITStage.Mail.IMAP
         private Channel<TcpClient> ConnectionQueue { get; set; }
         private UnifiedMailServerConfig Config { get; set; }
         private TcpListener? listener;
+        private X509Certificate2? sslCertificate;
 
         public IMAPServer(UnifiedMailServerConfig config)
         {
@@ -25,6 +28,32 @@ namespace ITStage.Mail.IMAP
         public async Task Initialize()
         {
             await _initWorkers();
+            await LoadSecureConnectionCertificates();
+        }
+
+        private async Task LoadSecureConnectionCertificates()
+        {
+            if (!string.IsNullOrEmpty(Config.SSLCertificatePath) && !string.IsNullOrEmpty(Config.SSLCertificateKey))
+            {
+                try
+                {
+                    // Load the certificate and key
+
+
+                    sslCertificate = X509CertificateLoader.LoadCertificateFromFile(Config.SSLCertificatePath);
+                    // Store the certificate for later use in SSL/TLS connections
+                    // For example, you could assign it to a property or use it in your connection handling logic
+                    await Logger.LogAsync("SSL/TLS certificate loaded successfully.");
+                }
+                catch (Exception ex)
+                {
+                    await Logger.LogAsync($"Error loading SSL/TLS certificate: {ex.Message}");
+                }
+            }
+            else
+            {
+                await Logger.LogAsync("SSL/TLS certificate path or key is not configured. IMAP server will run without SSL/TLS.");
+            }
         }
 
         private async Task _initWorkers()
@@ -48,15 +77,23 @@ namespace ITStage.Mail.IMAP
             {
                 try
                 {
-                    using StreamReader reader = new(stream);
-                    using StreamWriter writer = new(stream) { AutoFlush = true };
+                    using var sslStream = new SslStream(stream, false);
+
+                    await sslStream.AuthenticateAsServerAsync(new SslServerAuthenticationOptions
+                    {
+                        ServerCertificate = sslCertificate,
+                        EnabledSslProtocols = System.Security.Authentication.SslProtocols.Tls12 | System.Security.Authentication.SslProtocols.Tls13,
+                        ClientCertificateRequired = false
+                    });
+
+                    using StreamReader reader = new(sslStream);
+                    using StreamWriter writer = new(sslStream) { AutoFlush = true };
                     /*only once*/
-                    await RespondToClient(client, stream, "* OK IMAP4rev1 Service Ready");
+                    await RespondToClient(client, sslStream, "* OK IMAP4rev1 Service Ready");
 
                     for (; ; )
                     {
-                        if (!stream.CanRead || !stream.CanWrite) break;
-
+                        if (!sslStream.CanRead || !sslStream.CanWrite) break;
 
 
                         string command = await reader.ReadLineAsync() ?? "";
