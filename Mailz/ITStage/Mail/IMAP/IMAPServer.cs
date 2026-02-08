@@ -107,6 +107,7 @@ namespace ITStage.Mail.IMAP
                     string authData = await ReadLineAsync(reader);
                     Logger.Log($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
                     var decodedAuth = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(authData.Trim()));
+                    Logger.Log($"Decoded AUTH data from {client.Client.RemoteEndPoint}: {decodedAuth}");
                     var authParts = decodedAuth.Split('\0');
                     if (authParts.Length == 3)
                     {
@@ -122,14 +123,13 @@ namespace ITStage.Mail.IMAP
                         else
                         {
                             await RespondToClient(client, writer.BaseStream, $"{tag} OK Authentication successful");
-
                         }
                     }
                     else
                     {
                         await RespondToClient(client, writer.BaseStream, $"{tag} NO Invalid authentication data");
                     }
-                    await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
+                    // await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
                     await RespondToClient(client, writer.BaseStream, $"{tag} OK LOGIN completed");
                     break;
                 case "HELLO":
