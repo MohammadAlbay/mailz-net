@@ -27,8 +27,9 @@ namespace ITStage.Mail.IMAP
         }
         public async Task Initialize()
         {
-            await _initWorkers();
             await LoadSecureConnectionCertificates();
+            await _initWorkers();
+
         }
 
         private async Task LoadSecureConnectionCertificates()
