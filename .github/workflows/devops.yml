@@ -24,7 +24,7 @@ jobs:
                         git reset --hard
 
                         # 2.1. Remove untracked files and directories
-                        git clean -fdx
+                        # git clean -fdx
                         
                         # 2.5. Fetch the latest code
                         git pull origin main

@@ -1,0 +1,7 @@
+# .gitignore
+[Bb]in/
+[Oo]bj/
+.vs/
+.vscode/
+*.user
+publish-current/
