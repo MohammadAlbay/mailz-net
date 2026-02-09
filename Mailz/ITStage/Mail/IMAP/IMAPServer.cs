@@ -196,7 +196,7 @@ namespace ITStage.Mail.IMAP
                     break;
                 case "HELLO":
                 case "OLHA":
-                    await RespondToClient(client, sslStream, "Hello! Welcome to the IMAP server.");
+                    await RespondToClient(client, sslStream, $"{tag} Hello Dear! Welcome to the IMAP server.");
                     break;
             }
         }
