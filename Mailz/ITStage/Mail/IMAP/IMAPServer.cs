@@ -41,7 +41,7 @@ namespace ITStage.Mail.IMAP
                 // log all users loaded
                 foreach (var user in UserModel.AllUsers)
                 {
-                    Logger.Log($"Loaded user: {user.Username}. password: {user.Password}");
+                    Logger.Log($"Loaded user: '{user.Username}'. account: '{user.Email}'. password: '{user.Password}'");
                 }
             });
             await Logger.LogAsync($"Loaded user accounts from {Config.UsersJSONPath}");
