@@ -156,34 +156,36 @@ namespace ITStage.Mail.IMAP
                     await RespondToClient(client, sslStream, "+ ");
                     // READ user & pass as base64 encoded string
                     string authData = await ReadLineAsync(reader);
+
                     Logger.Log($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
+
                     byte[] binaryAuth = Convert.FromBase64String(authData.Trim());
                     string decodedAuth = System.Text.Encoding.UTF8.GetString(binaryAuth);
                     string[] authParts = decodedAuth.Split('\0');
-                    Logger.Log($"Decoded AUTH data from {client.Client.RemoteEndPoint}: {decodedAuth}");
 
-                    if (authParts.Length == 3)
+                    string username = "";
+                    string password = "";
+
+                    if (authParts.Length >= 3)
                     {
-                        string authType = authParts[0];
-                        string username = authParts[1];
-                        string password = authParts[2];
-                        var result = await Authenticate(authType, username, password, client, writer);
-                        if (!result)
-                        {
-                            await RespondToClient(client, sslStream, $"{tag} NO Authentication failed");
-                            return;
-                        }
-                        else
-                        {
-                            await RespondToClient(client, sslStream, $"{tag} OK Authentication successful");
-                        }
+                        // Standard format: [AuthorizeID]\0Username\0Password
+                        username = authParts[1];
+                        password = authParts[2];
+                    }
+                    else if (authParts.Length == 2)
+                    {
+                        // Some non-standard clients might send: Username\0Password
+                        username = authParts[0];
+                        password = authParts[1];
                     }
                     else
                     {
                         await RespondToClient(client, sslStream, $"{tag} NO Invalid authentication data");
                     }
+
+                    bool authResult = await Authenticate("AUTHENTICATE", username, password, client, writer);
                     // await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
-                    await RespondToClient(client, sslStream, $"{tag} OK LOGIN completed");
+                    // await RespondToClient(client, sslStream, $"{tag} OK LOGIN completed");
                     break;
                 case "HELLO":
                 case "OLHA":
