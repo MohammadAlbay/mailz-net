@@ -20,7 +20,7 @@ namespace ITStage.Mail.IMAP
                 return false;
             }
 
-            if (userModel.VerifyPassword(password))
+            if (!userModel.VerifyPassword(password))
             {
                 await RespondToClient(client, writer.BaseStream, $"{mechanism} authentication failed: invalid password");
                 return false;
