@@ -28,8 +28,18 @@ namespace ITStage.Mail.IMAP
         public async Task Initialize()
         {
             await LoadSecureConnectionCertificates();
+            await LoadAccounts();
             await _initWorkers();
 
+        }
+
+        private async Task LoadAccounts()
+        {
+            _ = Task.Run(() =>
+            {
+                UserModel.LoadUsers(Config.UsersJSONPath);
+            });
+            await Logger.LogAsync($"Loaded user accounts from {Config.UsersJSONPath}");
         }
 
         private async Task LoadSecureConnectionCertificates()
@@ -188,7 +198,6 @@ namespace ITStage.Mail.IMAP
             {
                 try
                 {
-
                     await stream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(response + "\r\n"));
                     await Logger.LogAsync($"Sent response to {client.Client.RemoteEndPoint}: {response}");
                 }

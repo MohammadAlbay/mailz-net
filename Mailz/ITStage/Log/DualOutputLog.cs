@@ -18,6 +18,7 @@ public class DualOutputLog
         this.consoleOutput = consoleOutput ?? Console.Out;
         this.fileWriter = new System.IO.StreamWriter(logFilePath, append: true);
         this.fileWriter.AutoFlush = true;
+
     }
 
     public async Task LogAsync(string message)
