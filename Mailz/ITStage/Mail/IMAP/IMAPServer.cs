@@ -38,6 +38,11 @@ namespace ITStage.Mail.IMAP
             _ = Task.Run(() =>
             {
                 UserModel.LoadUsers(Config.UsersJSONPath);
+                // log all users loaded
+                foreach (var user in UserModel.AllUsers)
+                {
+                    Logger.Log($"Loaded user: {user.Username}. password: {user.Password}");
+                }
             });
             await Logger.LogAsync($"Loaded user accounts from {Config.UsersJSONPath}");
         }
