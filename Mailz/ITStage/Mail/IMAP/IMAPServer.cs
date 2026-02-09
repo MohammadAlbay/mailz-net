@@ -181,9 +181,11 @@ namespace ITStage.Mail.IMAP
                     else
                     {
                         await RespondToClient(client, sslStream, $"{tag} NO Invalid authentication data");
+                        break;
                     }
 
-                    bool authResult = await Authenticate("AUTHENTICATE", username, password, client, writer);
+                    Logger.Log($"Decoded AUTH credentials from {client.Client.RemoteEndPoint}: username='{username}', password='{password}'");
+                    _ = await Authenticate("AUTHENTICATE", username, password, client, writer);
                     // await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
                     // await RespondToClient(client, sslStream, $"{tag} OK LOGIN completed");
                     break;
