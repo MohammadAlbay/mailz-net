@@ -26,7 +26,11 @@ namespace ITStage.Mail.IMAP
                 return false;
             }
 
-            UserModel.Login(userModel, client.Client.RemoteEndPoint?.ToString() ?? "unknown");
+            var temp = client.Client.RemoteEndPoint?.ToString()?.Split(':');
+            string ip = temp != null && temp.Length > 0 ? temp[0] : "unknown";
+            string port = temp != null && temp.Length > 1 ? temp[1] : "unknown";
+
+            UserModel.Login(userModel, ip ?? "unknown", port ?? "unknown");
             // UserModel
             await RespondToClient(client, writer.BaseStream, $"{mechanism} authentication successful");
             foreach (var session in userModel.GetActiveSessions())

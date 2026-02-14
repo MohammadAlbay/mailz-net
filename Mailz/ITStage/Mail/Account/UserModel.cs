@@ -32,7 +32,7 @@ public class UserModel
     };
 
     [JsonIgnore]
-    public List<string> Sessions { get; set; } = new();
+    public Dictionary<string, SessionDetail> Sessions { get; set; } = new();
 
     public string Username
     {
@@ -45,18 +45,18 @@ public class UserModel
         }
     }
 
-    public List<string> GetActiveSessions() => Sessions;
+    public Dictionary<string, SessionDetail> GetActiveSessions() => Sessions;
 
     public bool VerifyPassword(string password) => Password == password;
 
     public static UserModel? Find(string email) =>
         AllUsers.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
 
-    public static bool IsLoggedIn(UserModel user, string ip) => user.Sessions.Contains(ip);
+    public static bool IsLoggedIn(UserModel user, string ip) => user.Sessions.ContainsKey(ip);
 
-    public static void Login(UserModel user, string ip)
+    public static void Login(UserModel user, string ip, string port = "unknown")
     {
-        if (!user.Sessions.Contains(ip)) user.Sessions.Add(ip);
+        if (!user.Sessions.ContainsKey(ip)) user.Sessions.Add(ip, new SessionDetail { IP = ip, Port = port, LoginTime = DateTime.Now });
     }
 
     public static void Logout(UserModel user, string ip) => user.Sessions.Remove(ip);
