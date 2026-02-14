@@ -27,7 +27,12 @@ namespace ITStage.Mail.IMAP
             }
 
             UserModel.Login(userModel, client.Client.RemoteEndPoint?.ToString() ?? "unknown");
+            // UserModel
             await RespondToClient(client, writer.BaseStream, $"{mechanism} authentication successful");
+            foreach (var session in userModel.GetActiveSessions())
+            {
+                await Logger.LogAsync($"User {user} has active session from {session}");
+            }
             return true;
         }
     }

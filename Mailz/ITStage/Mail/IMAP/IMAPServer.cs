@@ -35,15 +35,7 @@ namespace ITStage.Mail.IMAP
 
         private async Task LoadAccounts()
         {
-            _ = Task.Run(() =>
-            {
-                UserModel.LoadUsers(Config.UsersJSONPath);
-                // log all users loaded
-                foreach (var user in UserModel.AllUsers)
-                {
-                    Logger.Log($"Loaded user: '{user.Username}'. account: '{user.Email}'. password: '{user.Password}'");
-                }
-            });
+            _ = Task.Run(() => UserModel.LoadUsers(Config.UsersJSONPath));
             await Logger.LogAsync($"Loaded user accounts from {Config.UsersJSONPath}");
         }
 
@@ -122,7 +114,10 @@ namespace ITStage.Mail.IMAP
                             break;
                         }
 
-                        await ParseCommands(command, client, writer, reader, sslStream);
+                        if (!await ParseCommands(command, client, writer, reader, sslStream))
+                        {
+                            break;
+                        }
                     }
 
                 }
@@ -135,7 +130,7 @@ namespace ITStage.Mail.IMAP
 
 
 
-        public async Task ParseCommands(string command, TcpClient? client, StreamWriter writer, StreamReader reader, SslStream sslStream)
+        public async Task<bool> ParseCommands(string command, TcpClient? client, StreamWriter writer, StreamReader reader, SslStream sslStream)
         {
             await Logger.LogAsync($"{client.Client.RemoteEndPoint}: Parsing command: {command}");
 
@@ -144,12 +139,13 @@ namespace ITStage.Mail.IMAP
             if (parts.Length < 2)
             {
                 await RespondToClient(client, sslStream, "* BAD Invalid command format");
-                return;
+                return false;
             }
 
             var tag = parts[0];
             var cmd = parts[1].ToUpper();
             var args = parts.Length > 2 ? parts[2] : "";
+            var continueLooping = true;
 
             switch (cmd)
             {
@@ -162,7 +158,7 @@ namespace ITStage.Mail.IMAP
                     // READ user & pass as base64 encoded string
                     string authData = await ReadLineAsync(reader);
 
-                    Logger.Log($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
+                    await Logger.LogAsync($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
 
                     byte[] binaryAuth = Convert.FromBase64String(authData.Trim());
                     string decodedAuth = System.Text.Encoding.UTF8.GetString(binaryAuth);
@@ -189,16 +185,26 @@ namespace ITStage.Mail.IMAP
                         break;
                     }
 
-                    Logger.Log($"Decoded AUTH credentials from {client.Client.RemoteEndPoint}: username='{username}', password='{password}'");
+                    await Logger.LogAsync($"Decoded AUTH credentials from {client.Client.RemoteEndPoint}: username='{username}', password='{password}'");
                     _ = await Authenticate("AUTHENTICATE", username, password, client, writer);
                     // await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
                     // await RespondToClient(client, sslStream, $"{tag} OK LOGIN completed");
+                    break;
+                case "BYE":
+                    await RespondToClient(client, sslStream, $"{tag} OK Goodbye!");
+                    client.Close();
+                    continueLooping = false;
                     break;
                 case "HELLO":
                 case "OLHA":
                     await RespondToClient(client, sslStream, $"{tag} Hello Dear! Welcome to the IMAP server.");
                     break;
+                default:
+                    await RespondToClient(client, sslStream, $"{tag} BAD Unknown command");
+                    break;
             }
+
+            return continueLooping;
         }
 
         public Task RespondToClient(TcpClient client, Stream stream, string response)

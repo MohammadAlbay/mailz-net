@@ -31,6 +31,7 @@ public class UserModel
         _ => ""
     };
 
+    [JsonIgnore]
     public List<string> Sessions { get; set; } = new();
 
     public string Username
@@ -43,6 +44,8 @@ public class UserModel
                 .Select(part => char.ToUpper(part[0]) + part.Substring(1)));
         }
     }
+
+    public List<string> GetActiveSessions() => Sessions;
 
     public bool VerifyPassword(string password) => Password == password;
 
