@@ -138,10 +138,11 @@ namespace ITStage.Mail.SMTP
             return true;
         }
 
-        public Task SendResponseAsync(TcpClient client, SslStream sslStream, string response)
+        public async Task SendResponseAsync(TcpClient client, SslStream sslStream, string response)
         {
-            // TODO: Implement response sending logic (string)
-            return Task.CompletedTask;
+            byte[] responseBytes = System.Text.Encoding.UTF8.GetBytes(response);
+            await sslStream.WriteAsync(responseBytes);
+            await sslStream.FlushAsync();
         }
         public Task SendResponseAsync(TcpClient client, Stream stream, byte[] response)
         {
