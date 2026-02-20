@@ -18,12 +18,12 @@ namespace ITStage.Mail.IMAP
         private TcpListener? listener;
         private X509Certificate2? sslCertificate;
 
-        public IMAPServer(UnifiedMailServerConfig config)
+        public IMAPServer(UnifiedMailServerConfig config, DualOutputLog logger)
         {
             Config = config;
+            Logger = logger;
             Port = config.ImapPort;
             ConnectionQueue = Channel.CreateBounded<TcpClient>(MAX_CAPACITY);
-            Logger = new DualOutputLog("IMAP", config.LogPath, Console.Out);
         }
         public async Task Initialize()
         {
@@ -74,15 +74,19 @@ namespace ITStage.Mail.IMAP
                 await foreach (TcpClient client in ConnectionQueue.Reader.ReadAllAsync())
                 {
                     // Handle client connection
-                    await Logger.LogAsync($"Handling new client: {client.Client.RemoteEndPoint}");
+                    await LogAsync($"Handling new client: {client.Client.RemoteEndPoint}");
                     await HandleClient(client);
                 }
             }
         }
 
+
+        public async Task LogAsync(string message) => await Logger.LogAsync($"[IMAP]:{message}");
+
+
         public async Task HandleClient(TcpClient client)
         {
-            await Logger.LogAsync($"Started handling client: {client.Client.RemoteEndPoint}");
+            await LogAsync($"Started handling client: {client.Client.RemoteEndPoint}");
             using (client)
             using (NetworkStream stream = client.GetStream())
             {
@@ -110,7 +114,7 @@ namespace ITStage.Mail.IMAP
                         string command = await reader.ReadLineAsync() ?? "";
                         if (string.IsNullOrWhiteSpace(command))
                         {
-                            await Logger.LogAsync($"Client {client.Client.RemoteEndPoint} disconnected.");
+                            await LogAsync($"Client {client.Client.RemoteEndPoint} disconnected.");
                             break;
                         }
 
@@ -123,7 +127,7 @@ namespace ITStage.Mail.IMAP
                 }
                 catch (Exception ex)
                 {
-                    await Logger.LogAsync($"Error handling client {client.Client.RemoteEndPoint}: {ex.Message}");
+                    await LogAsync($"Error handling client {client.Client.RemoteEndPoint}: {ex.Message}");
                 }
             }
         }
@@ -132,7 +136,7 @@ namespace ITStage.Mail.IMAP
 
         public async Task<bool> ParseCommands(string command, TcpClient? client, StreamWriter writer, StreamReader reader, SslStream sslStream)
         {
-            await Logger.LogAsync($"{client.Client.RemoteEndPoint}: Parsing command: {command}");
+            await LogAsync($"{client.Client.RemoteEndPoint}: Parsing command: {command}");
 
             // Extract Tag, Command, and Arguments
             var parts = command.Trim().Split(' ', 3, StringSplitOptions.RemoveEmptyEntries);
@@ -158,7 +162,7 @@ namespace ITStage.Mail.IMAP
                     // READ user & pass as base64 encoded string
                     string authData = await ReadLineAsync(reader);
 
-                    await Logger.LogAsync($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
+                    await LogAsync($"Received AUTH data from {client.Client.RemoteEndPoint}: {authData}");
 
                     byte[] binaryAuth = Convert.FromBase64String(authData.Trim());
                     string decodedAuth = System.Text.Encoding.UTF8.GetString(binaryAuth);
@@ -185,10 +189,20 @@ namespace ITStage.Mail.IMAP
                         break;
                     }
 
-                    await Logger.LogAsync($"Decoded AUTH credentials from {client.Client.RemoteEndPoint}: username='{username}', password='{password}'");
+                    await LogAsync($"Decoded AUTH credentials from {client.Client.RemoteEndPoint}: username='{username}', password='{password}'");
                     _ = await Authenticate("AUTHENTICATE", username, password, client, writer);
-                    // await RespondToClient(client, writer.BaseStream, $"Command is '{command}'");
-                    // await RespondToClient(client, sslStream, $"{tag} OK LOGIN completed");
+                    break;
+                case "LOGIN":
+                    var loginParts = args.Split(' ', 2, StringSplitOptions.RemoveEmptyEntries);
+                    if (loginParts.Length != 2)
+                    {
+                        await RespondToClient(client, sslStream, $"{tag} NO Invalid LOGIN format");
+                        break;
+                    }
+                    string loginUsername = loginParts[0];
+                    string loginPassword = loginParts[1];
+                    await LogAsync($"Received LOGIN command from {client.Client.RemoteEndPoint}: username='{loginUsername}'");
+                    _ = await Authenticate("LOGIN", loginUsername, loginPassword, client, writer);
                     break;
                 case "BYE":
                     await RespondToClient(client, sslStream, $"{tag} OK Goodbye!");
@@ -214,11 +228,11 @@ namespace ITStage.Mail.IMAP
                 try
                 {
                     await stream.WriteAsync(System.Text.Encoding.UTF8.GetBytes(response + "\r\n"));
-                    await Logger.LogAsync($"Sent response to {client.Client.RemoteEndPoint}: {response}");
+                    await LogAsync($"Sent response to {client.Client.RemoteEndPoint}: {response}");
                 }
                 catch (Exception ex)
                 {
-                    await Logger.LogAsync($"Error responding to client {client.Client.RemoteEndPoint}: {ex.Message}");
+                    await LogAsync($"Error responding to client {client.Client.RemoteEndPoint}: {ex.Message}");
                 }
             });
         }
@@ -233,12 +247,12 @@ namespace ITStage.Mail.IMAP
         {
             listener = new TcpListener(System.Net.IPAddress.Any, Port);
             listener.Start();
-            await Logger.LogAsync($"IMAP Server started on port {Port}. Waiting for connections...");
+            await LogAsync($"IMAP Server started on port {Port}. Waiting for connections...");
             while (true)
             {
                 TcpClient client = await listener.AcceptTcpClientAsync();
                 await ConnectionQueue.Writer.WriteAsync(client);
-                await Logger.LogAsync($"Accepted new client: {client.Client.RemoteEndPoint}");
+                await LogAsync($"Accepted new client: {client.Client.RemoteEndPoint}");
             }
         }
 

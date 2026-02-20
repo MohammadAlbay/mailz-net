@@ -12,6 +12,7 @@ namespace ITStage.Mail.IMAP
         Task RespondToClient(TcpClient client, Stream stream, string response);
         Task Connect();
         void Disconnect();
+        Task LogAsync(string message);
         // Other IMAP server related methods
     }
 }

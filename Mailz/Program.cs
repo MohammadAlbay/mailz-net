@@ -2,10 +2,11 @@
 using System;
 using ITStage.Mail;
 using ITStage.Mail.IMAP;
-
+using ITStage.Mail.SMTP;
+using ITStage.Log;
 Console.WriteLine("Starting Mailz Unified Mail Server...");
 var config = UnifiedMailServerConfig.LoadConfig("/etc/mailz/config/ums.json");
-
+var logger = new DualOutputLog("UMS", config.LogPath, Console.Out);
 IMAPServer imapServer = new IMAPServer(config);
 Task.WaitAll([
     Task.Run(async () =>

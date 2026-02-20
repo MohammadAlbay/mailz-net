@@ -16,33 +16,27 @@ public class DualOutputLog
         // Initialize logging to file and console
         this.logFilePath = logFilePath;
         this.consoleOutput = consoleOutput ?? Console.Out;
-        this.fileWriter = new System.IO.StreamWriter(logFilePath, append: true);
-        this.fileWriter.AutoFlush = true;
-
+        fileWriter = new StreamWriter(logFilePath, append: true) { AutoFlush = true };
     }
 
     public async Task LogAsync(string message)
     {
         string timestampedMessage = $"[{prefix}][{DateTime.Now}]: {message}";
 
-        // Log to console
         await consoleOutput.WriteLineAsync(timestampedMessage);
 
-        // Log to file
         try { await fileWriter.WriteLineAsync(timestampedMessage); } catch { }
-        // await fileWriter.FlushAsync();
+
     }
 
     public void Log(string message)
     {
         string timestampedMessage = $"[{prefix}][{DateTime.Now}]: {message}";
 
-        // Log to console
         consoleOutput.WriteLine(timestampedMessage);
 
-        // Log to file
         try { fileWriter.WriteLine(timestampedMessage); } catch { }
-        // fileWriter.FlushAsync();
+
     }
 
     public void Close()

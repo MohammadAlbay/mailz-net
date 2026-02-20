@@ -31,12 +31,12 @@ namespace ITStage.Mail.IMAP
             string port = temp != null && temp.Length > 1 ? temp[1] : "unknown";
 
             UserModel.Login(userModel, ip ?? "unknown", port ?? "unknown");
-            // UserModel
             await RespondToClient(client, writer.BaseStream, $"{mechanism} authentication successful");
-            foreach (var session in userModel.GetActiveSessions())
-            {
-                await Logger.LogAsync($"User {user} has active session from {session}");
-            }
+
+            // foreach (var session in userModel.GetActiveSessions())
+            // {
+            //     await LogAsync($"User {user} has active session from {session}");
+            // }
             return true;
         }
     }
