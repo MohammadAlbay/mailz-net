@@ -131,7 +131,7 @@ namespace ITStage.Mail.SMTP
         {
             // TODO: Implement command parsing logic
             await LogAsync($"Received command: {command}");
-            await SendResponseAsync(client, sslStream, $"* OK Command received {command}\r\n");
+            //await SendResponseAsync(client, sslStream, $"* OK Command received {command}\r\n");
             return true;
         }
 
