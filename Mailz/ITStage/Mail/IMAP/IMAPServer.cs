@@ -36,7 +36,7 @@ namespace ITStage.Mail.IMAP
         private async Task LoadAccounts()
         {
             _ = Task.Run(() => UserModel.LoadUsers(Config.UsersJSONPath));
-            await Logger.LogAsync($"Loaded user accounts from {Config.UsersJSONPath}");
+            await LogAsync($"Loaded user accounts from {Config.UsersJSONPath}");
         }
 
         private async Task LoadSecureConnectionCertificates()
@@ -47,23 +47,23 @@ namespace ITStage.Mail.IMAP
                 {
                     // Load the certificate and key
 
-                    Logger.Log($"Loading SSL/TLS certificate from {Config.SSLCertificatePath}\nand key from {Config.SSLCertificateKey}");
+                    await LogAsync($"Loading SSL/TLS certificate from {Config.SSLCertificatePath}\nand key from {Config.SSLCertificateKey}");
                     var certBuffer = File.ReadAllText(Config.SSLCertificatePath);
                     var keyBuffer = File.ReadAllText(Config.SSLCertificateKey);
 
                     sslCertificate = X509Certificate2.CreateFromPem(certBuffer, keyBuffer);
                     // Store the certificate for later use in SSL/TLS connections
                     // For example, you could assign it to a property or use it in your connection handling logic
-                    await Logger.LogAsync("SSL/TLS certificate loaded successfully.");
+                    await LogAsync("SSL/TLS certificate loaded successfully.");
                 }
                 catch (Exception ex)
                 {
-                    await Logger.LogAsync($"Error loading SSL/TLS certificate: {ex.Message}");
+                    await LogAsync($"Error loading SSL/TLS certificate: {ex.Message}");
                 }
             }
             else
             {
-                await Logger.LogAsync("SSL/TLS certificate path or key is not configured. IMAP server will run without SSL/TLS.");
+                await LogAsync("SSL/TLS certificate path or key is not configured. IMAP server will run without SSL/TLS.");
             }
         }
 
