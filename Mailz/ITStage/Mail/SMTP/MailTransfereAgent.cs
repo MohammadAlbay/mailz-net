@@ -53,7 +53,7 @@ namespace ITStage.Mail.SMTP
             }
             else
             {
-                await Logger.LogAsync("SSL/TLS certificate path or key is not configured. IMAP server will run without SSL/TLS.");
+                await LogAsync("SSL/TLS certificate path or key is not configured. IMAP server will run without SSL/TLS.");
             }
         }
 
@@ -74,10 +74,7 @@ namespace ITStage.Mail.SMTP
             await LoadSecureConnectionCertificates();
             await _initWorkers();
         }
-        public Task LogAsync(string message)
-        {
-            return Logger.LogAsync($"MTA: {message}");
-        }
+        public async Task LogAsync(string message) => await Logger.LogAsync($"[MTA]:{message}");
 
         public async Task HandleClientAsync(TcpClient client)
         {
