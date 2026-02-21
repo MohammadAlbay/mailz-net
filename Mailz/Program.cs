@@ -6,15 +6,16 @@ using ITStage.Mail.SMTP;
 using ITStage.Log;
 Console.WriteLine("Starting Mailz Unified Mail Server...");
 var config = UnifiedMailServerConfig.LoadConfig("/etc/mailz/config/ums.json");
-var logger = new DualOutputLog("UMS", config.LogPath, Console.Out);
-IMAPServer imapServer = new IMAPServer(config, logger);
-MailTransfereAgent mtaServer = new MailTransfereAgent(config, logger);
+DualOutputLog logger = new("UMS", config.LogPath, Console.Out);
+IMAPServer imapServer = new(config, logger);
+MailTransfereAgent mtaServer = new(config, logger);
+
+Console.WriteLine("Init Unified Main Server");
 Task.WaitAll([
     Task.Run(async () =>
     {
         await imapServer.Initialize();
     }),
-
     Task.Run(async () => {
         await imapServer.Connect();
     }),
@@ -23,6 +24,8 @@ Task.WaitAll([
     }),
     Task.Run(async () => {
         await mtaServer.ConnectAsync();
-    })
+    }),
+
+    Task.Run(async() => Console.WriteLine("Unified Mail Server is running..."))
 ]);
-Console.WriteLine("Unified Main Server is running...");
+

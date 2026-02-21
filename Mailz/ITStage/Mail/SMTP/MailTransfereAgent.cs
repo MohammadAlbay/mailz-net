@@ -38,15 +38,12 @@ namespace ITStage.Mail.SMTP
             {
                 try
                 {
-                    // Load the certificate and key
-
                     await LogAsync($"Loading SSL/TLS certificate from {Config.SSLCertificatePath}\nand key from {Config.SSLCertificateKey}");
                     var certBuffer = File.ReadAllText(Config.SSLCertificatePath);
                     var keyBuffer = File.ReadAllText(Config.SSLCertificateKey);
 
                     sslCertificate = X509Certificate2.CreateFromPem(certBuffer, keyBuffer);
-                    // Store the certificate for later use in SSL/TLS connections
-                    // For example, you could assign it to a property or use it in your connection handling logic
+
                     await LogAsync("SSL/TLS certificate loaded successfully.");
                 }
                 catch (Exception ex)
@@ -141,13 +138,12 @@ namespace ITStage.Mail.SMTP
         public async Task SendResponseAsync(TcpClient client, SslStream sslStream, string response)
         {
             byte[] responseBytes = System.Text.Encoding.UTF8.GetBytes(response);
-            await sslStream.WriteAsync(responseBytes);
-            await sslStream.FlushAsync();
+            await SendResponseAsync(client, sslStream, responseBytes);
         }
-        public Task SendResponseAsync(TcpClient client, Stream stream, byte[] response)
+        public async Task SendResponseAsync(TcpClient client, Stream stream, byte[] response)
         {
-            // TODO: Implement response sending logic (byte[])
-            return Task.CompletedTask;
+            await stream.WriteAsync(response);
+            await stream.FlushAsync();
         }
 
 
